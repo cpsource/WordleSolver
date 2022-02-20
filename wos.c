@@ -41,28 +41,28 @@ int current_play_row = 0; // the row to guess
 
 LB lb[LB_COLS][LB_ROWS];
 
-void show_lb(void) {
+void show_lb(FILE *outf) {
     // word can't have yellow in certain columns
   int tcol = 0;
   int trow = 0;
 
-  printf("show_lb (game board)\n");
+  fprintf(outf,"show_lb (game board)\n");
   
   while ( trow < current_play_row ) {
     for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
       switch ( lb[tcol][trow].flag ) {
       case LB_FLAG_GREY:
-	printf("%c:%s ",lb[tcol][trow].letter,"GREY");
+	fprintf(outf,"%c:%s   ",lb[tcol][trow].letter,"GREY");
 	break;
       case LB_FLAG_GREEN:
-	printf("%c:%s ",lb[tcol][trow].letter,"GREEN");
+	fprintf(outf,"%c:%s  ",lb[tcol][trow].letter,"GREEN");
 	break;
       case LB_FLAG_YELLOW:
-	printf("%c:%s ",lb[tcol][trow].letter,"YELLOW");
+	fprintf(outf,"%c:%s ",lb[tcol][trow].letter,"YELLOW");
 	break;
       }
     } // for
-    printf("\n");
+    fprintf(outf,"\n");
     trow += 1;
   } // while
 }
@@ -131,7 +131,7 @@ int load_play ( char *str ) {
     } // if  ':'
     if ( LB_FLAG_GREY == color ) {
       // never play this letter again
-      ok_buf[letter] = 0;
+      ok_buf[letter] = 2;
     }
     // save on game board
     lb[i][current_play_row].letter = letter;
@@ -140,6 +140,13 @@ int load_play ( char *str ) {
 
   current_play_row += 1;
 
+  // change any 2's to 0;s
+  for ( i = 'a' ; i <= 'z' ; i += 1 ) {
+    if ( ok_buf[i] == 2 ) {
+      ok_buf[i] = 0;
+    }
+  }
+  
   return 1;
 }
 
@@ -403,11 +410,16 @@ void dump_list(void)
 int letters_valid ( char *buf )
 {
   char *c;
+
+  //printf("letters_valid: word: <%s>\n",buf);
   
   /* can only use these letters */
   c = (char *)buf;
   while ( *c != 0 ) {
-    if ( !ok_buf[(int)*c] ) return 0;
+    if ( !ok_buf[(int)*c] ) {
+      //printf("letters_valid: invalid letter at <%s>\n",c);
+      return 0;
+    }
     c += 1;
   }
   return 1;
@@ -449,27 +461,25 @@ int main(int argc, char *argv[])
   
   // load game
   load_game_txt();
-  show_lb();
+  show_lb(stdout);
 
   /* get right dictionary */
-  strcpy(filename,"ans.txt");
-  inf = fopen(filename, "r");
-  if ( !inf ) {
-    strcpy(filename,"wos_words.txt");
-  }
+  strcpy(filename,"wos_words.txt");
   inf = fopen(filename, "r");
   if ( !inf ) {
     printf("%s not found\n",filename);
     exit(0);
   }
   // print some stats
-  printf("Open: %s\n",filename);
+  printf("Opened %s\n",filename);
 
   // make the play
   if ( ! load_play(argv[1]) ) {
     printf("can't make the play <%s>\n",argv[1]);
     exit(0);
   }
+
+  show_lb(stdout);
 
   //
   // check certain placement rules for this play
@@ -553,6 +563,8 @@ int main(int argc, char *argv[])
   // now, show what we can do next by scanning our word list
   //
 
+  printf("Scanning word list\n");
+  
   // scan entire word list *.txt
   while ( fgets((char * restrict)work_buffer,sizeof(work_buffer), inf) ) {
     int len;
@@ -561,7 +573,6 @@ int main(int argc, char *argv[])
     if ( strlen((const char *)work_buffer) == 0 ) continue;
     
     // get rid of new-line
-    c = strchr((const char *)work_buffer,'\n'); if ( c ) *c = 0;
     c = strchr((const char *)work_buffer,'\n'); if ( c ) *c = 0;
     c = strchr((const char *)work_buffer,' '); if ( c ) *c = 0;
     
@@ -573,6 +584,8 @@ int main(int argc, char *argv[])
 
     // all letters must be valid
     if ( !letters_valid((char *)work_buffer) ) continue;
+
+    //printf("%s: all letters valid\n",work_buffer);
     
 #if 0
     // already done by setup
