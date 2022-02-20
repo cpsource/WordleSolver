@@ -1,3 +1,4 @@
+setup
 *~
 add_words.sh
 all.txt
@@ -12,7 +13,6 @@ push.sh
 reset-cache.sh
 sbs_ita_words.txt
 sbs_words.txt
-setup.c
 words.txt
 words/
 wos_ita_words.txt
