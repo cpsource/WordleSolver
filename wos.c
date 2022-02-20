@@ -41,6 +41,32 @@ int current_play_row = 0; // the row to guess
 
 LB lb[LB_COLS][LB_ROWS];
 
+void show_lb(void) {
+    // word can't have yellow in certain columns
+  int tcol = 0;
+  int trow = 0;
+
+  printf("show_lb (game board)\n");
+  
+  while ( trow < current_play_row ) {
+    for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
+      switch ( lb[tcol][trow].flag ) {
+      case LB_FLAG_GREY:
+	printf("%c:%s ",lb[tcol][trow].letter,"GREY");
+	break;
+      case LB_FLAG_GREEN:
+	printf("%c:%s ",lb[tcol][trow].letter,"GREEN");
+	break;
+      case LB_FLAG_YELLOW:
+	printf("%c:%s ",lb[tcol][trow].letter,"YELLOW");
+	break;
+      }
+    } // for
+    printf("\n");
+    trow += 1;
+  } // while
+}
+
 void skip_space_tab(char **c) {
   char *d = *c;
   while ( *d != 0 && (*d == ' ' || *d == '\t') ) {
@@ -79,6 +105,8 @@ int load_play ( char *str ) {
     if ( *c == ',' ) {
       c += 1;
     }
+    skip_space_tab(&c);
+    
     letter = *c;
     if ( !ok_buf[letter] ) {
       printf("load_play: invalid letter at <%s>\n",c);
@@ -99,6 +127,7 @@ int load_play ( char *str ) {
 	printf("load_play: unknown color at <%s>\n",c);
 	return 0;
       } // switch
+      c += 1;
     } // if  ':'
     if ( LB_FLAG_GREY == color ) {
       // never play this letter again
@@ -108,6 +137,9 @@ int load_play ( char *str ) {
     lb[i][current_play_row].letter = letter;
     lb[i][current_play_row].flag   = color;
   } // for i
+
+  current_play_row += 1;
+
   return 1;
 }
 
@@ -410,13 +442,14 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  // load game
-  load_game_txt();
-  
   /* allow only these letters to start */
   for ( i = 'a' ; i <= 'z' ; i++ ) {
     ok_buf[i] = 1;
   }
+  
+  // load game
+  load_game_txt();
+  show_lb();
 
   /* get right dictionary */
   strcpy(filename,"ans.txt");
