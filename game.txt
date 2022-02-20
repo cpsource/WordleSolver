@@ -1,0 +1,4 @@
+#
+# game.txt - save the state of the game
+#
+p , o , w:y , e , r

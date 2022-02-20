@@ -53,6 +53,123 @@ void skip_to_tab(char **c) {
   *c = d;
 }
 
+// of the form p , o , w:y , e , r
+int load_play ( char *str ) {
+  char *c = str;
+  char letter;
+  int color;
+  int i;
+
+  if ( current_play_row >= LB_ROWS ) {
+    printf("load_play: game full\n");
+    return 0;
+  }
+  
+  for ( i = 0 ; i < 5 ; i++ ) {
+    color = LB_FLAG_GREY; // set default color
+    if ( *c == 0 ) {
+      printf("load_play: end of file ???\n");
+      return 0;
+    }
+    skip_space_tab(&c);
+    if ( *c == ',' ) {
+      c += 1;
+    }
+    letter = *c;
+    if ( !ok_buf[letter] ) {
+      printf("load_play: invalid letter at <%d>\n",c);
+      return 0;
+    }
+    if ( *c ) c += 1;
+    skip_space_tab(&c);
+    if ( *c == ':' ) {
+      if ( *c ) c += 1;
+      switch ( *c ) {
+      case 'g':
+	color = LB_FLAG_GREEN;
+	break;
+      case 'y':
+	color = LB_FLAG_YELLOW;
+	break;
+      default:
+	printf("load_play: unknown color at <%s>\n",c);
+	return 0;
+      } // switch
+    } // if  ':'
+    if ( LB_FLAG_GREY == color ) {
+      // never play this letter again
+      ok_buf[letter] = 0;
+    }
+    // save on game board
+    LB[i][current_play_row].letter = letter;
+    LB[i][current_play_row].flag   = color;
+  } // for i
+  return 1;
+}
+
+int load_game_txt ( void )
+{
+  char wbuf[256];
+  FILE *inf;
+  char *c;
+  inf = fopen("game.txt","r");
+  if ( !inf ) {
+    printf("load_game_txt: new game, no game.txt\n");
+    return 0;
+  }
+
+  while ( fgets(wbuf,sizeof(wbuf), inf) ) {
+    c strchr(wbuf,'\n'); if ( c ) *c = 0;
+    if ( wbuf[0] == '#' ) continue;
+    if ( strlen(wbuf) == 0 ) continue;
+
+    load_play(wbuf);
+  }
+
+  fclose(inf);
+  return 1;
+ }
+
+ int save_game_txt ( void )
+ {
+   int col,row;
+   FILE *outf;
+   char color = 'x';
+   
+   outf = fopen("game.txt","w+");
+   if ( !outf ) {
+     printf("save_game_txt: can't create fame.txt\n");
+     exit(0);
+   }
+   fprintf(outf,"#\n# game.txt - save the state of the game\n#\n");
+
+   for ( row = 0 ; row < LB_ROWS ; row += 1 ) {
+     for ( col = 0 ; col < LB_COLS ; col ++ 1 ) {
+       switch ( LB[col][row].flag ) {
+       case LB_COLOR_GREY:
+	 break;
+       case LB_COLOR_GREEN:
+	 color = 'g';
+	 break;
+       case LB_COLOR_YELLOW:
+	 color = 'y';
+	 break;
+       }
+       if ( col > 0 ) {
+	 fprintf(outf," , ");
+       }
+       if ( LB[col][row].flag == LB_FLAG_GREY ) {
+	 fprintf(outf,"%c", LB[col][row].letter);
+       } else {
+	 fprintf(outf,"%c:%c", LB[col][row].letter, color);
+       }
+     } // for col
+     fprintf(outf,"\n");
+   } // for row
+
+   fclose(outf);
+ }
+ 
 /*
  * str ==> letter , color ...
  */
@@ -246,7 +363,7 @@ void dump_list(void)
 #endif
 
 // return true if letters are valid
-int letters_valid ( char *buf, int cl )
+int letters_valid ( char *buf )
 {
   char *c;
   
@@ -256,7 +373,6 @@ int letters_valid ( char *buf, int cl )
     if ( !ok_buf[(int)*c] ) return 0;
     c += 1;
   }
-  if ( !strchr(buf,cl) ) return 0;
   return 1;
 }
     
@@ -272,38 +388,56 @@ int main(int argc, char *argv[])
   ANS_TXT *tmp;
   int approved_words = 0;
   int other_words = 0;
+  int i;
   
   printf("%s.%s\n",VERSION_STR,GIT_VERSION);
   printf("Build Date: %s\n",BUILD_DATE);
-  
+
   if ( argc < 1 || argc > 2 ) {
-    printf("usage: ./wos [-a]\n");
+    printf("usage: ./wos [-n]/[a play]\n");
     exit(0);
   }
-  if ( argv[l_index][0] == '-' && argv[l_index][1] == 'a' ) {
-    l_index += 1;
-    use_a = 1;
-  }
+  use_a = 1;
   
-  /* allow only these letters */
-  c = &argv[l_index][0];
-  while ( *c != 0 ) {
-    ok_buf[(int)*c] = 1;
-    c += 1;
+  if ( argv[1][0] == '-' && argv[1][1] == 'n' ) {
+    printf("new game\n");
+    unlink("game.txt");
+    unlink("ans.txt");
+    exit(0);
   }
+
+  // load game
+  load_game_txt();
   
+  /* allow only these letters to start */
+  for ( i = 'a' ; i < = 'z' ; i++ ) {
+    ok_buf[i] = 1;
+  }
+
   /* get right dictionary */
-  strcpy(filename,"wos_words.txt");
+  strcpy(filename,"ans.txt");
+  inf = fopen(filename, "r");
+  if ( !inf ) {
+    strcpy(filename,"wos_words.txt");
+  }
   inf = fopen(filename, "r");
   if ( !inf ) {
     printf("%s not found\n",filename);
     exit(0);
   }
-  
   // print some stats
-  printf("Letters: %s\n",argv[l_index]);
   printf("Open: %s\n",filename);
-  
+
+  // make the play
+  if ( ! load_play(argv[1]) ) {
+    printf("can't make the play <%s>\n");
+    exit(0);
+  }
+
+  //
+  // now, show what we can do next
+  //
+
   // scan entire word list *.txt
   while ( fgets((char * restrict)work_buffer,sizeof(work_buffer), inf) ) {
     int len;
@@ -313,7 +447,6 @@ int main(int argc, char *argv[])
     
     // get rid of new-line
     c = strchr((const char *)work_buffer,'\n'); if ( c ) *c = 0;
-    // c = strchr((const char *)work_buffer,'\m'); if ( c ) *c = 0;
     c = strchr((const char *)work_buffer,'\n'); if ( c ) *c = 0;
     c = strchr((const char *)work_buffer,' '); if ( c ) *c = 0;
     
@@ -322,7 +455,12 @@ int main(int argc, char *argv[])
     
     // reject any words not 5 in length
     if ( len != 5 ) continue;
-#if 1
+
+    // must be valid letters
+    if ( !letters_valid(work_buffer) ) continue;
+    
+#if 0
+    // already done by setup
     c = (char *)work_buffer;
     while ( *c != 0 ) {
       *c = tolower(*c) & 127;
