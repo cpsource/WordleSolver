@@ -19,6 +19,7 @@ int use_a = 0;
 
 unsigned char work_buffer[256];
 unsigned char ok_buf[256];
+unsigned char yellow_list[256];
 
 /*
  * Keep track of our play board
@@ -389,6 +390,7 @@ int main(int argc, char *argv[])
   int approved_words = 0;
   int other_words = 0;
   int i;
+  char letter;
   
   printf("%s.%s\n",VERSION_STR,GIT_VERSION);
   printf("Build Date: %s\n",BUILD_DATE);
@@ -435,7 +437,85 @@ int main(int argc, char *argv[])
   }
 
   //
-  // now, show what we can do next
+  // check certain placement rules for this play
+  //
+  
+  // yellows can't be in last row at known positions
+  int tcol = 0;
+  int trow = 0;
+  while ( tcol < LB_COLS ) {
+    letter = '#';  // set to invalid
+    for ( trow = 0 ; trow < current_play_row-1 ; trow += 1 ) {
+      if ( LB[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	letter = LB[tcol][trow].letter;
+      }
+    } // for trow
+    if ( current_play_row > 1 ) {
+      if ( letter != '#' ) {
+	if ( LB[tcol][trow].letter == letter ) {
+	  printf("Yellow letter can't be in column d\n",tcol + 1 );
+	  exit(0);
+	}
+      }
+    }
+    tcol += 1;
+  }
+
+  // last row must contain all yellows
+  tcol = 0;
+  trow = 0;
+  memset(yellow_list,0,sizeof(yellow_list));
+  while ( tcol < LB_COLS ) {
+    for ( trow = 0 ; trow < current_play_row ; trow += 1 ) {
+      if ( LB[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	yellow_list[LB[tcol][trow].letter] = 1;
+      }
+    } // for trow
+    tcol += 1;
+  }
+  for ( i = 'a' ; i <= 'z' ; i += 1 ) {
+    if ( yellow_list[i] ) {
+      // must contain this one
+      tcol = 0;
+      trow = current_play_row -1;
+      if ( trow > 0 ) {
+	for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
+	  if ( (char)i == LB[tcol][trow].letter ) {
+	    yellow_list[i] = 0;
+	  }
+	}
+      }
+    }
+  }
+  for ( i = 'a' ; i <= 'z' ; i += 1 ) {
+    if ( yellow_list[i] ) {
+      printf("missing yellow character %c in last row\n",i);
+    }
+  }
+
+  // greens must be in the right place
+  tcol = 0;
+  trow = 0;
+  while ( tcol < LB_COLS ) {
+    letter = '#';  // set to invalid
+    for ( trow = 0 ; trow < current_play_row-1 ; trow += 1 ) {
+      if ( LB[tcol][trow].flag == LB_FLAG_GREEN ) {
+	letter = LB[tcol][trow].letter;
+      }
+    } // for trow
+    if ( current_play_row > 1 ) {
+      if ( letter != '#' ) {
+	if ( LB[tcol][trow].letter != letter ) {
+	  printf("Green letter missing in column %d\n",tcol + 1 );
+	  exit(0);
+	}
+      }
+    }
+    tcol += 1;
+  }
+  
+  //
+  // now, show what we can do next by scanning our word list
   //
 
   // scan entire word list *.txt
@@ -456,7 +536,7 @@ int main(int argc, char *argv[])
     // reject any words not 5 in length
     if ( len != 5 ) continue;
 
-    // must be valid letters
+    // all letters must be valid
     if ( !letters_valid(work_buffer) ) continue;
     
 #if 0
@@ -468,25 +548,18 @@ int main(int argc, char *argv[])
     }
 #endif // 1
 
-    /* can't contain grey letters */
-    int tcol = 0;
-    int trow = 0;
-    while ( trow < current_play_row ) {
-      for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
-	c = (char *)work_buffer;
-	while ( *c != 0 ) {
-	  if ( *c == LB[tcol][trow].letter && LB[tcol][trow].flag == LB_FLAG_GREY ) {
-	    goto is_not_ok;
-	  }
-	  c += 1;
-	} // while c
-      } // for
-      trow += 1;
-    } // while
+    // proposed word can't contain grey letters
+    c = work_buf;
+    while ( *c ) {
+      if ( !ok_buf[*c] ) {
+	goto is_not_ok;
+      }
+      c += 1;
+    }
     
-    /* red letters must be in a particular word column */
-    int tcol = 0;
-    int trow = 0;
+    /* green letters must be in a particular word column */
+    tcol = 0;
+    trow = 0;
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
@@ -498,14 +571,14 @@ int main(int argc, char *argv[])
       trow += 1;
     }
 
-    /* word must contain yellow letters */
-    int tcol = 0;
-    int trow = 0;
+    // word can't have yellow in certain columns
+    tcol = 0;
+    trow = 0;
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
 	if ( LB[tcol][trow].flag == LB_FLAG_YELOW ) {
-	  if ( NULL == strchr(c,LB[tcol][trow].letter) ) {
+	  if ( c[tcol] == LB[tcol][trow].letter ) {
 	    goto is_not_ok;
 	  }
 	}
@@ -513,14 +586,14 @@ int main(int argc, char *argv[])
       trow += 1;
     }
 
-    /* word can't have yellow in a column */
-    int tcol = 0;
-    int trow = 0;
+    // word must contain yellow letters
+    tcol = 0;
+    trow = 0;
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
 	if ( LB[tcol][trow].flag == LB_FLAG_YELOW ) {
-	  if ( c[tcol] == LB[tcol][trow].letter ) {
+	  if ( NULL == strchr(c,LB[tcol][trow].letter) ) {
 	    goto is_not_ok;
 	  }
 	}
@@ -569,7 +642,6 @@ int main(int argc, char *argv[])
     fprintf(stderr,"%d: system call %s failed\n",__LINE__,system_cmd);
     exit(0);
   }
-
   
   // lets load bads.txt into memory
   open_fd_ro ( );
