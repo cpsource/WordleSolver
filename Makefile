@@ -8,5 +8,5 @@ setup: setup.c
 	gcc -O2 -o setup setup.c
 
 wos: config.h version.h wos.c
-	gcc -DGIT_VERSION=\"$(GIT_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\" -Wall -Werror -O2 -o wos sbs.c
+	gcc -DGIT_VERSION=\"$(GIT_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\" -Wall -Werror -O2 -o wos wos.c -Wno-char-subscripts
 

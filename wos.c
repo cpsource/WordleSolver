@@ -24,19 +24,22 @@ unsigned char yellow_list[256];
 /*
  * Keep track of our play board
  */
-#define LB_FLAG_NONE 0
-#define LB_FLAG_GREY 1
+#define LB_FLAG_NONE   0
+#define LB_FLAG_GREY   1
 #define LB_FLAG_YELLOW 2
-#define LB_FLAG_GREEN 3
+#define LB_FLAG_GREEN  3
 
 typedef struct letter_bit {
   char letter;
   int flag;
 } LB;
+
 #define LB_COLS 5
 #define LB_ROWS 6
-int current_play_row 0 // the row to guess
-LB[LB_COLS][LB_ROWS];
+
+int current_play_row = 0; // the row to guess
+
+LB lb[LB_COLS][LB_ROWS];
 
 void skip_space_tab(char **c) {
   char *d = *c;
@@ -78,7 +81,7 @@ int load_play ( char *str ) {
     }
     letter = *c;
     if ( !ok_buf[letter] ) {
-      printf("load_play: invalid letter at <%d>\n",c);
+      printf("load_play: invalid letter at <%s>\n",c);
       return 0;
     }
     if ( *c ) c += 1;
@@ -102,8 +105,8 @@ int load_play ( char *str ) {
       ok_buf[letter] = 0;
     }
     // save on game board
-    LB[i][current_play_row].letter = letter;
-    LB[i][current_play_row].flag   = color;
+    lb[i][current_play_row].letter = letter;
+    lb[i][current_play_row].flag   = color;
   } // for i
   return 1;
 }
@@ -120,7 +123,7 @@ int load_game_txt ( void )
   }
 
   while ( fgets(wbuf,sizeof(wbuf), inf) ) {
-    c strchr(wbuf,'\n'); if ( c ) *c = 0;
+    c = strchr(wbuf,'\n'); if ( c ) *c = 0;
     if ( wbuf[0] == '#' ) continue;
     if ( strlen(wbuf) == 0 ) continue;
 
@@ -131,45 +134,46 @@ int load_game_txt ( void )
   return 1;
  }
 
- int save_game_txt ( void )
- {
-   int col,row;
-   FILE *outf;
-   char color = 'x';
-   
-   outf = fopen("game.txt","w+");
-   if ( !outf ) {
-     printf("save_game_txt: can't create fame.txt\n");
-     exit(0);
-   }
-   fprintf(outf,"#\n# game.txt - save the state of the game\n#\n");
-
-   for ( row = 0 ; row < LB_ROWS ; row += 1 ) {
-     for ( col = 0 ; col < LB_COLS ; col ++ 1 ) {
-       switch ( LB[col][row].flag ) {
-       case LB_COLOR_GREY:
-	 break;
-       case LB_COLOR_GREEN:
-	 color = 'g';
-	 break;
-       case LB_COLOR_YELLOW:
-	 color = 'y';
-	 break;
-       }
-       if ( col > 0 ) {
-	 fprintf(outf," , ");
-       }
-       if ( LB[col][row].flag == LB_FLAG_GREY ) {
-	 fprintf(outf,"%c", LB[col][row].letter);
-       } else {
-	 fprintf(outf,"%c:%c", LB[col][row].letter, color);
-       }
-     } // for col
-     fprintf(outf,"\n");
-   } // for row
-
-   fclose(outf);
- }
+int save_game_txt ( void )
+{
+  int col,row;
+  FILE *outf;
+  char color = 'x';
+  
+  outf = fopen("game.txt","w+");
+  if ( !outf ) {
+    printf("save_game_txt: can't create fame.txt\n");
+    exit(0);
+  }
+  fprintf(outf,"#\n# game.txt - save the state of the game\n#\n");
+  
+  for ( row = 0 ; row < LB_ROWS ; row += 1 ) {
+    for ( col = 0 ; col < LB_COLS ; col += 1 ) {
+      switch ( lb[col][row].flag ) {
+      case LB_FLAG_GREY:
+	break;
+      case LB_FLAG_GREEN:
+	color = 'g';
+	break;
+      case LB_FLAG_YELLOW:
+	color = 'y';
+	break;
+      }
+      if ( col > 0 ) {
+	fprintf(outf," , ");
+      }
+      if ( lb[col][row].flag == LB_FLAG_GREY ) {
+	fprintf(outf,"%c", lb[col][row].letter);
+      } else {
+	fprintf(outf,"%c:%c", lb[col][row].letter, color);
+      }
+    } // for col
+    fprintf(outf,"\n");
+  } // for row
+  
+  fclose(outf);
+  return 1;
+}
  
 /*
  * str ==> letter , color ...
@@ -198,14 +202,14 @@ void fill_in_board( char *str )
       flag = LB_FLAG_GREEN;
       break;
     default:
-      printf("Unknown color %s\n"c);
+      printf("Unknown color %c\n",*c);
       exit(0);
       break;
     }
-    skip_to_space_tab(&c);
+    skip_space_tab(&c);
 
-    LB[col][current_play_row].letter = letter;
-    LB[col][current_play_row].flag = flag;
+    lb[col][current_play_row].letter = letter;
+    lb[col][current_play_row].flag = flag;
     
     col += 1;
   } // while
@@ -381,9 +385,7 @@ int main(int argc, char *argv[])
 {
   FILE *inf, *outf;
   char *c;
-  int use_popular = 0;
   int l_index = 1;
-  int use_ita = 0;
   char filename[64];
   char system_cmd[64];
   ANS_TXT *tmp;
@@ -412,7 +414,7 @@ int main(int argc, char *argv[])
   load_game_txt();
   
   /* allow only these letters to start */
-  for ( i = 'a' ; i < = 'z' ; i++ ) {
+  for ( i = 'a' ; i <= 'z' ; i++ ) {
     ok_buf[i] = 1;
   }
 
@@ -432,7 +434,7 @@ int main(int argc, char *argv[])
 
   // make the play
   if ( ! load_play(argv[1]) ) {
-    printf("can't make the play <%s>\n");
+    printf("can't make the play <%s>\n",argv[1]);
     exit(0);
   }
 
@@ -446,14 +448,14 @@ int main(int argc, char *argv[])
   while ( tcol < LB_COLS ) {
     letter = '#';  // set to invalid
     for ( trow = 0 ; trow < current_play_row-1 ; trow += 1 ) {
-      if ( LB[tcol][trow].flag == LB_FLAG_YELLOW ) {
-	letter = LB[tcol][trow].letter;
+      if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	letter = lb[tcol][trow].letter;
       }
     } // for trow
     if ( current_play_row > 1 ) {
       if ( letter != '#' ) {
-	if ( LB[tcol][trow].letter == letter ) {
-	  printf("Yellow letter can't be in column d\n",tcol + 1 );
+	if ( lb[tcol][trow].letter == letter ) {
+	  printf("Yellow letter can't be in column %d\n",tcol + 1 );
 	  exit(0);
 	}
       }
@@ -467,8 +469,8 @@ int main(int argc, char *argv[])
   memset(yellow_list,0,sizeof(yellow_list));
   while ( tcol < LB_COLS ) {
     for ( trow = 0 ; trow < current_play_row ; trow += 1 ) {
-      if ( LB[tcol][trow].flag == LB_FLAG_YELLOW ) {
-	yellow_list[LB[tcol][trow].letter] = 1;
+      if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	yellow_list[lb[tcol][trow].letter] = 1;
       }
     } // for trow
     tcol += 1;
@@ -480,7 +482,7 @@ int main(int argc, char *argv[])
       trow = current_play_row -1;
       if ( trow > 0 ) {
 	for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
-	  if ( (char)i == LB[tcol][trow].letter ) {
+	  if ( (char)i == lb[tcol][trow].letter ) {
 	    yellow_list[i] = 0;
 	  }
 	}
@@ -499,13 +501,13 @@ int main(int argc, char *argv[])
   while ( tcol < LB_COLS ) {
     letter = '#';  // set to invalid
     for ( trow = 0 ; trow < current_play_row-1 ; trow += 1 ) {
-      if ( LB[tcol][trow].flag == LB_FLAG_GREEN ) {
-	letter = LB[tcol][trow].letter;
+      if ( lb[tcol][trow].flag == LB_FLAG_GREEN ) {
+	letter = lb[tcol][trow].letter;
       }
     } // for trow
     if ( current_play_row > 1 ) {
       if ( letter != '#' ) {
-	if ( LB[tcol][trow].letter != letter ) {
+	if ( lb[tcol][trow].letter != letter ) {
 	  printf("Green letter missing in column %d\n",tcol + 1 );
 	  exit(0);
 	}
@@ -537,7 +539,7 @@ int main(int argc, char *argv[])
     if ( len != 5 ) continue;
 
     // all letters must be valid
-    if ( !letters_valid(work_buffer) ) continue;
+    if ( !letters_valid((char *)work_buffer) ) continue;
     
 #if 0
     // already done by setup
@@ -549,7 +551,7 @@ int main(int argc, char *argv[])
 #endif // 1
 
     // proposed word can't contain grey letters
-    c = work_buf;
+    c = (char *)work_buffer;
     while ( *c ) {
       if ( !ok_buf[*c] ) {
 	goto is_not_ok;
@@ -563,8 +565,8 @@ int main(int argc, char *argv[])
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
-	if ( LB[tcol][trow].flag == LB_FLAG_GREEN &&
-	     c[tcol] != LB[tcol][trow].letter ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_GREEN &&
+	     c[tcol] != lb[tcol][trow].letter ) {
 	  goto is_not_ok;
 	}
       }
@@ -577,8 +579,8 @@ int main(int argc, char *argv[])
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
-	if ( LB[tcol][trow].flag == LB_FLAG_YELOW ) {
-	  if ( c[tcol] == LB[tcol][trow].letter ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	  if ( c[tcol] == lb[tcol][trow].letter ) {
 	    goto is_not_ok;
 	  }
 	}
@@ -592,8 +594,8 @@ int main(int argc, char *argv[])
     c = (char *)work_buffer;
     while ( trow < current_play_row ) {
       for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
-	if ( LB[tcol][trow].flag == LB_FLAG_YELOW ) {
-	  if ( NULL == strchr(c,LB[tcol][trow].letter) ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	  if ( NULL == strchr(c,lb[tcol][trow].letter) ) {
 	    goto is_not_ok;
 	  }
 	}
@@ -602,7 +604,7 @@ int main(int argc, char *argv[])
     }
 
     // finally, add the word
-    save_word((char *)work_buffer, 0, (char *)work_buffer);
+    save_word((char *)work_buffer, 0);
 
   is_not_ok:;
   } // while fgets
