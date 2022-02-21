@@ -107,12 +107,19 @@ int load_play ( char *str ) {
       c += 1;
     }
     skip_space_tab(&c);
-    
+
     letter = *c;
+
+     if ( lb[i][current_play_row-1].flag == LB_FLAG_GREEN &&
+	 lb[i][current_play_row-1].letter == letter ) {
+       goto is_ok;
+    }
+
     if ( !ok_buf[letter] ) {
       printf("load_play: invalid letter at <%s>\n",c);
       return 0;
     }
+  is_ok:;
     if ( *c ) c += 1;
     skip_space_tab(&c);
     if ( *c == ':' ) {
