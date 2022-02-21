@@ -845,23 +845,31 @@ int main(int argc, char *argv[])
   // dump stats
   fprintf(stdout,"Approved Words: %d\n",approved_words);
 
-#if 0  
+#if 1
   // now lets dump the entire list just in case
   if ( use_a ) {
     fprintf(outf,"\n");
     fprintf(outf,"Entire Remaining List:\n");
     fprintf(outf,"\n");
+
+    fprintf(stdout,"\n");
+    fprintf(stdout,"Entire Remaining List:\n");
+    fprintf(stdout,"\n");
+    
     tmp = root_ans_txt;
     while ( tmp ) {
+      int is_nyt;
       if ( !(tmp->flags & FLAGS_duplicate) )  {
 	if ( tmp->flags & FLAGS_bad )  {
 	  if ( !(tmp->flags & FLAGS_printed) )  {
 	    other_words += 1;
+	    is_nyt = is_nytword(tmp->word);
 	    if ( tmp->flags & FLAGS_pangram )  {
 	      fprintf(outf,"* %s\n",tmp->word);
 	      fprintf(stdout,"* %s\n",tmp->word);
 	    } else {
-	      fprintf(outf,"%s\n",tmp->word);
+	      fprintf(outf,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
+	      fprintf(stdout,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
 	    }
 	    tmp->flags |= FLAGS_printed;
 	  } // FLAGS_printed
