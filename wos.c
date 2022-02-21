@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
   // so we have a possible list stored at root_ans_list
   //
 
-#if 0  
+#if 1
   // generate a prototype ans.txt
   unlink(ANS_TXT_STR);
   outf = fopen(ANS_TXT_STR,"w");
