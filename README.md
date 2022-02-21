@@ -38,5 +38,6 @@ To play
   Then, run wos and enter the letters and colors you received from
   the web version.
 
+Bug Fixes
 
-
+  Fixed bug with a letter that's both grey and green in one line.

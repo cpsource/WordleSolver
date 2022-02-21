@@ -413,12 +413,27 @@ void dump_list(void)
 #endif
 
 // return true if letters are valid
+// but green letters override grey ones
 int letters_valid ( char *buf )
 {
-  char *c;
-
-  //printf("letters_valid: word: <%s>\n",buf);
+  int i;
   
+  //printf("letters_valid: word: <%s>\n",buf);
+
+  for ( i = 0 ; i < 5 ; i += 1 ) {
+    if ( lb[i][current_play_row-1].flag == LB_FLAG_GREEN &&
+	 lb[i][current_play_row-1].letter == buf[i] ) {
+      continue;
+    }
+
+    if ( !ok_buf[buf[i]] ) {
+      //printf("letters_valid: invalid letter at <%s>\n",c);
+      return 0;
+    }
+  }
+
+  return 1;
+#if 0  
   /* can only use these letters */
   c = (char *)buf;
   while ( *c != 0 ) {
@@ -429,6 +444,7 @@ int letters_valid ( char *buf )
     c += 1;
   }
   return 1;
+#endif
 }
     
 int main(int argc, char *argv[])
@@ -602,6 +618,7 @@ int main(int argc, char *argv[])
     }
 #endif // 1
 
+#if 0    
     // proposed word can't contain grey letters
     c = (char *)work_buffer;
     while ( *c ) {
@@ -610,6 +627,7 @@ int main(int argc, char *argv[])
       }
       c += 1;
     }
+#endif
     
     /* green letters must be in a particular word column */
     tcol = 0;
@@ -666,7 +684,8 @@ int main(int argc, char *argv[])
   //
   // so we have a possible list stored at root_ans_list
   //
-  
+
+#if 0  
   // generate a prototype ans.txt
   unlink(ANS_TXT_STR);
   outf = fopen(ANS_TXT_STR,"w");
@@ -680,7 +699,8 @@ int main(int argc, char *argv[])
     tmp = tmp->next;
   }
   fclose(outf);
-
+#endif
+  
   // lets run aspell against it
 #define SYSTEM_CALL "aspell -c %s > %s"
   
