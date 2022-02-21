@@ -56,4 +56,12 @@ Note
 
   You don't have to use GNU aspell. Just set use_a to zero at main and recompile.
   You will get a longer list that you have to sort through.
+
+Note
+
+  I ripped off the word list from nytimes with curl and put it in file nytwords.[ch].
+  I'll watch it from day to day and see if they change it.
+
+  The idea that words don't end in 's' is quite untrue. For example, nyt uses
+  rebus, truss, and floss to name a few.
   

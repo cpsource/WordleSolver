@@ -14,6 +14,7 @@
 #include "config.h"
 #include "version.h"
 #include "freq.h"
+#include "nytwords.h"
 
 // -a flag - use aspell
 int use_a = 0;
@@ -394,6 +395,15 @@ void save_word ( char *word, int flags )
 {
   ANS_TXT *new;
 
+  // make sure not already on list
+  new = root_ans_txt;
+  while ( new ) {
+    if ( 0 == strcmp(new->word,word) ) {
+      return;
+    }
+    new = new->next;
+  }
+  
   new = malloc(sizeof(ANS_TXT));
   if ( !new ) {
     fprintf(stderr,"%d: malloc failed\n",__LINE__);
@@ -685,8 +695,65 @@ int main(int argc, char *argv[])
 
   is_not_ok:;
   } // while fgets
-  
+
   fclose(inf);
+
+  // scan entire nytwords
+  int idx = 0;
+  while ( (c=get_nytword(idx++)) ) {
+    
+    // get rid of obviously invalid records
+    if ( strlen((const char *)work_buffer) == 0 ) continue;
+    
+    // all letters must be valid
+    if ( !letters_valid((char *)work_buffer) ) continue;
+
+    /* green letters must be in a particular word column */
+    tcol = 0;
+    trow = 0;
+    while ( trow < current_play_row ) {
+      for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_GREEN &&
+	     c[tcol] != lb[tcol][trow].letter ) {
+	  goto is_not_ok_1;
+	}
+      }
+      trow += 1;
+    }
+
+    // word can't have yellow in certain columns
+    tcol = 0;
+    trow = 0;
+    while ( trow < current_play_row ) {
+      for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	  if ( c[tcol] == lb[tcol][trow].letter ) {
+	    goto is_not_ok_1;
+	  }
+	}
+      }
+      trow += 1;
+    }
+
+    // word must contain yellow letters
+    tcol = 0;
+    trow = 0;
+    while ( trow < current_play_row ) {
+      for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
+	if ( lb[tcol][trow].flag == LB_FLAG_YELLOW ) {
+	  if ( NULL == strchr(c,lb[tcol][trow].letter) ) {
+	    goto is_not_ok_1;
+	  }
+	}
+      }
+      trow += 1;
+    }
+
+    // finally, add the word
+    save_word(c, 0);
+
+  is_not_ok_1:;
+  } // while get_nytword
 
   //
   // so we have a possible list stored at root_ans_list
@@ -754,8 +821,8 @@ int main(int argc, char *argv[])
     if ( !(tmp->flags & FLAGS_duplicate) )  {
       if ( !(tmp->flags & FLAGS_bad) )  {
 
-	// no 's' at the end rule
-	if ( 's' == tmp->word[4] ) {
+	// must by an nyt word
+	if ( !is_nytword(tmp->word) ) {
 	  goto forward;
 	}
 	
