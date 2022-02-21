@@ -1,14 +1,12 @@
 WordleSolver is an assistant that helps you solve Wordle puzzles.
 
-Note: This code doesn't run yet, but will soon.
-
 Build Instructions
 
   Install GNU aspell
   
   It is known to run on Ubuntu Linux
 
-  ./make
+  make
 
 Run Instructions
 
@@ -16,21 +14,29 @@ Run Instructions
   	     ./wos -n
 
   Enter a guess
-  	./wos "<letter>,<color> ... repeated 4 more times
+  	./wos "<letter>:<color initial> , repeated 4 more times"
 
 	letter [a..z]
-	color green, gray, yellow
+	color green, yellow. Note that grey is default and not entered
 
-  After a guess, wos will print out possible words remaining
+  Example:
 
-Why stop at six tries?
+	./wos "w:y , a , d , d , y"
 
-  I modified the game to give you ten tries insted of six.
+	Here, the letter 'w' will be yellow, and the rest will be grey
 
-Advanced strategies
+  After a guess, wos will print out possible words remaining along with
+  a letter frequency metric.
 
-  Soon, wos will sort possible words in their letter probability of
-  occurring in the English language.
+  Note also wos produces ans.txt to keep a record of the game.
 
-  Aditionally, if you are guessing, why try a word with an unknown
-  double letter?
+To play
+
+  First, enter your guess into the web version of Wordle at
+  https://www.nytimes.com/games/wordle
+
+  Then, run wos and enter the letters and colors you received from
+  the web version.
+
+
+

@@ -13,6 +13,7 @@
 
 #include "config.h"
 #include "version.h"
+#include "freq.h"
 
 // -a flag - use aspell
 int use_a = 0;
@@ -46,7 +47,7 @@ void show_lb(FILE *outf) {
   int tcol = 0;
   int trow = 0;
 
-  fprintf(outf,"show_lb (game board)\n");
+  fprintf(outf,"Game Board\n");
   
   while ( trow < current_play_row ) {
     for ( tcol = 0 ; tcol < LB_COLS ; tcol += 1 ) {
@@ -179,7 +180,8 @@ int save_game_txt ( void )
   FILE *outf;
   char color = 'x';
   
-  outf = fopen("game.txt","w+");
+  unlink("game.txt");
+  outf = fopen("game.txt","w");
   if ( !outf ) {
     printf("save_game_txt: can't create fame.txt\n");
     exit(0);
@@ -188,6 +190,7 @@ int save_game_txt ( void )
   
   for ( row = 0 ; row < LB_ROWS ; row += 1 ) {
     for ( col = 0 ; col < LB_COLS ; col += 1 ) {
+      color = 'x';
       switch ( lb[col][row].flag ) {
       case LB_FLAG_GREY:
 	break;
@@ -196,6 +199,9 @@ int save_game_txt ( void )
 	break;
       case LB_FLAG_YELLOW:
 	color = 'y';
+	break;
+      default:
+	goto finis;
 	break;
       }
       if ( col > 0 ) {
@@ -209,7 +215,7 @@ int save_game_txt ( void )
     } // for col
     fprintf(outf,"\n");
   } // for row
-  
+ finis:;
   fclose(outf);
   return 1;
 }
@@ -563,7 +569,7 @@ int main(int argc, char *argv[])
   // now, show what we can do next by scanning our word list
   //
 
-  printf("Scanning word list\n");
+  //printf("Scanning word list\n");
   
   // scan entire word list *.txt
   while ( fgets((char * restrict)work_buffer,sizeof(work_buffer), inf) ) {
@@ -670,7 +676,7 @@ int main(int argc, char *argv[])
   }
   tmp = root_ans_txt;
   while ( tmp ) {
-    fprintf(outf,"%s\n",tmp->word);
+    fprintf(outf,"%s : %d\n",tmp->word,calc_weight(tmp->word));
     tmp = tmp->next;
   }
   fclose(outf);
@@ -712,17 +718,29 @@ int main(int argc, char *argv[])
   fprintf(outf,"Build Date: %s\n",BUILD_DATE);
   fprintf(outf,"Letters: %s\n",argv[l_index]);
   fprintf(outf,"Open: %s\n",filename);
+  show_lb(outf);
+
+  show_lb(stdout);
+    
   tmp = root_ans_txt;
   while ( tmp ) {
     if ( !(tmp->flags & FLAGS_duplicate) )  {
       if ( !(tmp->flags & FLAGS_bad) )  {
+
+	// no 's' at the end rule
+	if ( 's' == tmp->word[4] ) {
+	  goto forward;
+	}
+	
 	approved_words += 1;
 	if ( tmp->flags & FLAGS_pangram )  {
 	  fprintf(outf,"* %s\n",tmp->word);
 	  fprintf(stdout,"* %s\n",tmp->word);
 	} else {
-	  fprintf(outf,"%s\n",tmp->word);
+	  fprintf(outf,"%s : %4d\n",tmp->word, calc_weight(tmp->word));
+	  printf("%s : %4d\n",tmp->word, calc_weight(tmp->word));
 	}
+      forward:;
 	tmp->flags |= FLAGS_printed;
       }
     }
@@ -767,6 +785,9 @@ int main(int argc, char *argv[])
   // close output file
   fclose(outf);
 
+  // save our game state
+  save_game_txt();
+  
 #if defined(USE_DEBUG)
   dump_list();
 #endif
