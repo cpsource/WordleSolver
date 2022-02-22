@@ -1,4 +1,4 @@
-/* sbs.c - SpellingBeeSolutions */
+/* wps.c - WordleSolutions */
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -808,7 +808,7 @@ int main(int argc, char *argv[])
     printf("%d: %s can't be created\n",__LINE__,ANS_TXT_STR);
     exit(0);
   }
-  fprintf(outf,"sbs %s.%s\n",VERSION_STR,GIT_VERSION);
+  fprintf(outf,"wos %s.%s\n",VERSION_STR,GIT_VERSION);
   fprintf(outf,"Build Date: %s\n",BUILD_DATE);
   fprintf(outf,"Letters: %s\n",argv[l_index]);
   fprintf(outf,"Open: %s\n",filename);
