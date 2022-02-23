@@ -15,6 +15,7 @@
 #include "version.h"
 #include "freq.h"
 #include "nytwords.h"
+#include "best_guess.h"
 
 // -a flag - use aspell
 int use_a = 0;
@@ -155,6 +156,17 @@ int load_play ( char *str ) {
       ok_buf[i] = 0;
     }
   }
+
+  if ( 1 == current_play_row ) {
+    char first_guess[LB_ROWS+1];
+
+    for ( i = 0 ; i < LB_COLS ; i++ ) {
+      first_guess[i] = lb[i][0].letter;
+    } // for
+    first_guess[i] = 0;
+    
+    best_second_guess(stdout, first_guess);
+  } // if
   
   return 1;
 }
@@ -490,6 +502,9 @@ int main(int argc, char *argv[])
     printf("new game\n");
     unlink("game.txt");
     unlink("ans.txt");
+
+    best_first_guess(stdout);
+    
     exit(0);
   }
 
