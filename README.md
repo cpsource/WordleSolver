@@ -64,4 +64,12 @@ Note
 
   The idea that words don't end in 's' is quite untrue. For example, nyt uses
   rebus, truss, and floss to name a few.
+
+Note
+
+  If you get fedup with the game, just run getans.sh and it will print
+  the answer in "solution" on the string.
+
+  getabs.sh may have to be modified based on where your sqlite3 file is located.
+  Just cd, then find to find the location.
   
