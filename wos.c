@@ -157,17 +157,6 @@ int load_play ( char *str ) {
     }
   }
 
-  if ( 1 == current_play_row ) {
-    char first_guess[LB_ROWS+1];
-
-    for ( i = 0 ; i < LB_COLS ; i++ ) {
-      first_guess[i] = lb[i][0].letter;
-    } // for
-    first_guess[i] = 0;
-    
-    best_second_guess(stdout, first_guess);
-  } // if
-  
   return 1;
 }
 
@@ -176,6 +165,8 @@ int load_game_txt ( void )
   char wbuf[256];
   FILE *inf;
   char *c;
+  int i;
+  
   inf = fopen("game.txt","r");
   if ( !inf ) {
     printf("load_game_txt: new game, no game.txt\n");
@@ -191,6 +182,18 @@ int load_game_txt ( void )
   }
 
   fclose(inf);
+  
+  if ( 1 == current_play_row ) {
+    char first_guess[LB_ROWS+1];
+
+    for ( i = 0 ; i < LB_COLS ; i++ ) {
+      first_guess[i] = lb[i][0].letter;
+    } // for
+    first_guess[i] = 0;
+    
+    best_second_guess(stdout, first_guess);
+  } // if
+
   return 1;
  }
 
@@ -879,12 +882,16 @@ int main(int argc, char *argv[])
 	  if ( !(tmp->flags & FLAGS_printed) )  {
 	    other_words += 1;
 	    is_nyt = is_nytword(tmp->word);
-	    if ( tmp->flags & FLAGS_pangram )  {
-	      fprintf(outf,"* %s\n",tmp->word);
-	      fprintf(stdout,"* %s\n",tmp->word);
+	    if ( !is_nyt ) {
+	      if ( tmp->flags & FLAGS_pangram )  {
+		fprintf(outf,"* %s\n",tmp->word);
+		fprintf(stdout,"* %s\n",tmp->word);
+	      } else {
+		fprintf(outf,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
+		fprintf(stdout,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
+	      }
 	    } else {
-	      fprintf(outf,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
-	      fprintf(stdout,"%s %s\n",tmp->word, is_nyt ? "Is an NYT word" : "Is NOT an NYT word");
+	      fprintf(stdout,"%s %s\n",tmp->word, "Is an NYT word");
 	    }
 	    tmp->flags |= FLAGS_printed;
 	  } // FLAGS_printed
